@@ -1,5 +1,5 @@
-load("//tensorflow:tensorflow.bzl", "tf_cuda_library")
-load("//tensorflow:tensorflow.bzl", "tf_gen_op_wrapper_py")
+load("@org_tensorflow//tensorflow:tensorflow.bzl", "tf_cuda_library")
+load("@org_tensorflow//tensorflow:tensorflow.bzl", "tf_gen_op_wrapper_py")
 
 package(default_visibility = ["//visibility:public"])
 
@@ -59,7 +59,6 @@ tf_cuda_library(
         ":windows": ["windows_export_all_symbols"],
         "//conditions:default": [],
     }),
-    linkshared = 1,
     deps = [
         # cirq cc proto
         "//tensorflow_quantum/core/ops:parse_context",
@@ -68,7 +67,7 @@ tf_cuda_library(
         "//tensorflow_quantum/core/proto:program_cc_proto",
         "//tensorflow_quantum/core/src:circuit_parser_qsim",
         "//tensorflow_quantum/core/src:util_qsim",
-        "@qsim/lib:qsim_cuda_lib",
+        "@qsim//lib:qsim_cuda_lib",
         "@eigen//:eigen3",
         # tensorflow core framework
         # tensorflow core lib
@@ -87,9 +86,30 @@ py_binary(
     srcs = ["gpu_benchmark.py"],
     python_version = "PY3",
     deps = [
-        "//tensorflow_quantum/core/ops:tfq_simulate_ops_cuda_py",
+        ":tfq_simulate_ops_cuda_py",
         "//tensorflow_quantum/core/ops:tfq_simulate_ops_py",
         "//tensorflow_quantum/core/serialize:serializer",
+        "//tensorflow_quantum/python:util",
+    ],
+)
+
+py_library(
+    name = "tfq_simulate_ops_cuda_py",
+    srcs = ["tfq_simulate_ops_cuda.py"],
+    data = ["//tensorflow_quantum/core/ops/gpu:_tfq_simulate_ops_cuda.so"],
+    srcs_version = "PY3",
+    deps = [
+        # tensorflow framework for wrappers
+        "//tensorflow_quantum/core/ops:load_module",
+    ],
+)
+
+py_test(
+    name = "tfq_simulate_ops_cuda_test",
+    srcs = ["tfq_simulate_ops_cuda_test.py"],
+    python_version = "PY3",
+    deps = [
+        ":tfq_simulate_ops_cuda_py",
         "//tensorflow_quantum/python:util",
     ],
 )

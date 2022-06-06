@@ -154,7 +154,7 @@ class TfqSimulateExpectationOpGpuCpu : public tensorflow::OpKernel {
 
     tensorflow::Tensor* output = nullptr;
     tensorflow::AllocatorAttributes alloc_attr;
-    alloc_attr.set_on_host(true);
+    alloc_attr.set_on_host(true); // why??
     alloc_attr.set_gpu_compatible(true);
     OP_REQUIRES_OK(context, context->allocate_output(0, output_shape, &output,
                                                      alloc_attr));
@@ -162,7 +162,7 @@ class TfqSimulateExpectationOpGpuCpu : public tensorflow::OpKernel {
     // Parse program protos.
     std::vector<Program> programs;
     std::vector<int> num_qubits;
-    std::vector<std::vector<PauliSum>> pauli_sums;
+    std::vector<std::vector<PauliSum>> pauli_sums; // why is this a vector of vectors??
     OP_REQUIRES_OK(context, GetProgramsAndNumQubits(context, &programs,
                                                     &num_qubits, &pauli_sums));
 
