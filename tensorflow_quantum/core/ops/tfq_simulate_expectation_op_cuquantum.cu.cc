@@ -126,9 +126,6 @@ class TfqSimulateExpectationOpGpuCpu : public tensorflow::OpKernel {
  public:
   explicit TfqSimulateExpectationOpGpuCpu(tensorflow::OpKernelConstruction* context)
       : OpKernel(context) {
-    // Initialize custatevec handles
-    cublasCreate(&cublas_handle);
-    custatevecCreate(&custatevec_handle);
     // Get the number of CPU cycle in ComputeSmall via attributes.
     OP_REQUIRES_OK(context, context->GetAttr("cpu_cycle", &cpu_cycle_));
 
@@ -206,11 +203,25 @@ class TfqSimulateExpectationOpGpuCpu : public tensorflow::OpKernel {
     }
 
     if (max_num_qubits >= 26 || programs.size() == 1) {
+      // create handles for simulator
+      cublasCreate(&cublas_handle);
+      custatevecCreate(&custatevec_handle);
+
       ComputeLarge(num_qubits, fused_circuits, pauli_sums, context,
                    &output_tensor); // HOW TO manage extraWorkspace size?
+      // destroy handles in sync with simulator lifetime
+      cublasDestroy(&cublas_handle);
+      custatevecDestroy(&custatevec_handle);
     } else {
+      // create handles for simulator
+      cublasCreate(&cublas_handle);
+      custatevecCreate(&custatevec_handle);
+      // compute
       ComputeSmall(num_qubits, max_num_qubits, fused_circuits, pauli_sums,
                    context, &output_tensor);
+      // destroy handles in sync with simulator lifetime
+      cublasDestroy(&cublas_handle);
+      custatevecDestroy(&custatevec_handle);
     }
   }
 
