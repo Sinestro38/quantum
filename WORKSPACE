@@ -37,6 +37,22 @@ http_archive(
 #     build_file = "/root/tfq_project/qsim/lib/BUILD",
 # )
 
+new_local_repository(
+    name = "cuda_headers",
+    path = "/usr/local/cuda/include",
+    build_file_content = """
+package(
+    default_visibility = [
+        "//visibility:public",
+    ],
+)
+
+cc_library(
+    name = "headers",
+    srcs = glob(["**/*.h"]),
+)
+""",
+)
 
 http_archive(
     name = "org_tensorflow",

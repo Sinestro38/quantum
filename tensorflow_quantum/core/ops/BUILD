@@ -54,6 +54,7 @@ tf_cuda_library(
             "-std=c++14",
             "-D_GLIBCXX_USE_CXX11_ABI=0",
             "-O3",
+            "-Iexternal/cuda_headers",
             "-DNV_CUDNN_DISABLE_EXCEPTION",
         ],
     }),
@@ -71,6 +72,7 @@ tf_cuda_library(
         "//tensorflow_quantum/core/src:util_qsim",
         "@qsim//lib:qsim_cuda_lib",
         "@eigen//:eigen3",
+        "@cuda_headers//:headers",
         # tensorflow core framework
         # tensorflow core lib
         # tensorflow core protos
