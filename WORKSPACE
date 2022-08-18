@@ -26,10 +26,17 @@ cc_library(
 
 http_archive(
     name = "qsim",
-    sha256 = "525250bafd37aab9db525d22e7b12689da617a116fe2cdf3f524ee7ea6a0ef45",
-    strip_prefix = "qsim-0.11.2-dev-20220104",
-    urls = ["https://github.com/quantumlib/qsim/archive/refs/tags/v0.11.2-dev+20220104.zip"],
+    sha256 = "9cfae3b680178373fdf013a416cba216de2c91ccc8c7c89937fc4e8b450dc02d",
+    strip_prefix = "qsim-0.14.0",
+    urls = ["https://github.com/quantumlib/qsim/archive/refs/tags/v0.14.0.zip"],
 )
+
+# new_local_repository(
+#     name = "qsim",
+#     path = "/root/tfq_project/qsim",
+#     build_file = "/root/tfq_project/qsim/lib/BUILD",
+# )
+
 
 http_archive(
     name = "org_tensorflow",

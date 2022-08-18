@@ -98,7 +98,7 @@ py_binary(
 py_library(
     name = "tfq_simulate_ops_cuda_py",
     srcs = ["tfq_simulate_ops_cuda.py"],
-    data = ["//tensorflow_quantum/core/ops/gpu:_tfq_simulate_ops_cuda.so"],
+    data = [":_tfq_simulate_ops_cuda.so"],
     srcs_version = "PY3",
     deps = [
         # tensorflow framework for wrappers
