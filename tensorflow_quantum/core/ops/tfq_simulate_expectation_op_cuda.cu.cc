@@ -162,7 +162,7 @@ class TfqSimulateExpectationOpGpuCpu : public tensorflow::OpKernel {
     // Parse program protos.
     std::vector<Program> programs;
     std::vector<int> num_qubits;
-    std::vector<std::vector<PauliSum>> pauli_sums; // why is this a vector of vectors??
+    std::vector<std::vector<PauliSum>> pauli_sums;
     OP_REQUIRES_OK(context, GetProgramsAndNumQubits(context, &programs,
                                                     &num_qubits, &pauli_sums));
 
