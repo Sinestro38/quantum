@@ -1,5 +1,6 @@
 load("@org_tensorflow//tensorflow:tensorflow.bzl", "tf_cuda_library")
 load("@org_tensorflow//tensorflow:tensorflow.bzl", "tf_gen_op_wrapper_py")
+load("@org_tensorflow//tensorflow:tensorflow.bzl", "tf_kernel_library")
 
 # load op_wrapper
 
@@ -15,9 +16,9 @@ config_setting(
     constraint_values = ["@bazel_tools//platforms:windows"],
 )
 
-tf_cuda_library(
+tf_kernel_library(
     name = "_tfq_simulate_ops_cuda.so",
-    srcs = [
+    gpu_srcs = [
         "tfq_simulate_expectation_op_cuda.cu.cc",
     ],
     copts = select({
@@ -56,6 +57,7 @@ tf_cuda_library(
             "-O3",
             "-Iexternal/cuda_headers",
             "-DNV_CUDNN_DISABLE_EXCEPTION",
+            # "-fpermissive",
         ],
     }),
     features = select({
@@ -77,6 +79,7 @@ tf_cuda_library(
         # tensorflow core lib
         # tensorflow core protos
     ],
+    # alwayslink = 1,
 )
 
 tf_gen_op_wrapper_py(
@@ -118,6 +121,109 @@ py_test(
     ],
 )
 
+
+### CUQUANTUM TARGETS 
+
+# tf_cuda_library(
+#     name = "_tfq_simulate_ops_cuquantum.so",
+#     srcs = [
+#         "tfq_simulate_expectation_op_cuquantum.cu.cc",
+#         "tfq_simulate_sampled_expectation_op_cuquantum.cu.cc",
+#         "tfq_simulate_samples_op_cuquantum.cu.cc",
+#         "tfq_simulate_state_op_cuquantum.cu.cc",
+#     ],
+#     copts = select({
+#         ":windows": [
+#             "/D__CLANG_SUPPORT_DYN_ANNOTATION__",
+#             "/D_USE_MATH_DEFINES",
+#             "/DEIGEN_MPL2_ONLY",
+#             "/DEIGEN_MAX_ALIGN_BYTES=64",
+#             "/DEIGEN_HAS_TYPE_TRAITS=0",
+#             "/DTF_USE_SNAPPY",
+#             "/showIncludes",
+#             "/MD",
+#             "/O2",
+#             "/DNDEBUG",
+#             "/w",
+#             "-DWIN32_LEAN_AND_MEAN",
+#             "-DNOGDI",
+#             "/d2ReducedOptimizeHugeFunctions",
+#             "/arch:AVX",
+#             "/std:c++14",
+#             "-DTENSORFLOW_MONOLITHIC_BUILD",
+#             "/DPLATFORM_WINDOWS",
+#             "/DEIGEN_HAS_C99_MATH",
+#             "/DTENSORFLOW_USE_EIGEN_THREADPOOL",
+#             "/DEIGEN_AVOID_STL_ARRAY",
+#             "/Iexternal/gemmlowp",
+#             "/wd4018",
+#             "/wd4577",
+#             "/DNOGDI",
+#             "/UTF_COMPILE_LIBRARY",
+#         ],
+#         "//conditions:default": [
+#             "-pthread",
+#             "-std=c++14",
+#             "-D_GLIBCXX_USE_CXX11_ABI=0",
+#             "-O3",
+#             "-Iexternal/cuda_headers",
+#             "-DNV_CUDNN_DISABLE_EXCEPTION",
+#             "-fpermissive",
+#             "-I${CUQUANTUM_ROOT}/include",
+#             "-L${CUQUANTUM_ROOT}/lib",
+#             "-lcustatevec",
+#         ],
+#     }),
+#     features = select({
+#         ":windows": ["windows_export_all_symbols"],
+#         "//conditions:default": [],
+#     }),
+#     deps = [
+#         # cirq cc proto
+#         "//tensorflow_quantum/core/ops:parse_context",
+#         "//tensorflow_quantum/core/ops:tfq_simulate_utils",
+#         "//tensorflow_quantum/core/proto:pauli_sum_cc_proto",
+#         "//tensorflow_quantum/core/proto:program_cc_proto",
+#         "//tensorflow_quantum/core/src:circuit_parser_qsim",
+#         "//tensorflow_quantum/core/src:util_qsim",
+#         "@qsim//lib:qsim_cuda_lib",
+#         "@eigen//:eigen3",
+#         "@cuda_headers//:headers",
+#         # tensorflow core framework
+#         # tensorflow core lib
+#         # tensorflow core protos
+#     ],
+# )
+
+
+# tf_gen_op_wrapper_py(
+#     name = "gen_tfq_simulate_ops_cuquantum_py",
+#     out = "gen_tfq_simulate_ops_cuquantum.py",
+#     deps = [":_tfq_simulate_ops_cuquantum.so"],
+# )
+
+# py_library(
+#     name = "tfq_simulate_ops_cuquantum_py",
+#     srcs = ["tfq_simulate_ops_cuquantum.py"],
+#     data = [":_tfq_simulate_ops_cuquantum.so"],
+#     srcs_version = "PY3",
+#     deps = [
+#         # tensorflow framework for wrappers
+#         "//tensorflow_quantum/core/ops:load_module",
+#     ],
+# )
+
+# py_test(
+#     name = "tfq_simulate_ops_cuquantum_test",
+#     srcs = ["tfq_simulate_ops_cuquantum_test.py"],
+#     python_version = "PY3",
+#     deps = [
+#         ":tfq_simulate_ops_cuquantum_py",
+#         "//tensorflow_quantum/python:util",
+#     ],
+# )
+
+### END CUQUANTUM TARGETS
 
 py_library(
     name = "ops",
