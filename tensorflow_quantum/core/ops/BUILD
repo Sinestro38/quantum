@@ -1,6 +1,8 @@
 load("@org_tensorflow//tensorflow:tensorflow.bzl", "tf_cuda_library")
 load("@org_tensorflow//tensorflow:tensorflow.bzl", "tf_gen_op_wrapper_py")
 load("@org_tensorflow//tensorflow:tensorflow.bzl", "tf_kernel_library")
+# load("@org_tensorflow//tensorflow:tensorflow.bzl", "tf_gpu_library")
+load("@org_tensorflow//tensorflow:tensorflow.bzl", "tf_gpu_kernel_library")
 
 # load op_wrapper
 
@@ -18,10 +20,17 @@ config_setting(
 
 tf_kernel_library(
     name = "_tfq_simulate_ops_cuda.so",
+    srcs = [
+        "tfq_simulate_expectation_op_cuda.cc"
+    ],
     gpu_srcs = [
         "tfq_simulate_expectation_op_cuda.cu.cc",
     ],
-    copts = select({
+    features = select({
+        ":windows": ["windows_export_all_symbols"],
+        "//conditions:default": [],
+    }),
+    gpu_copts = select({
         ":windows": [
             "/D__CLANG_SUPPORT_DYN_ANNOTATION__",
             "/D_USE_MATH_DEFINES",
@@ -60,10 +69,6 @@ tf_kernel_library(
             # "-fpermissive",
         ],
     }),
-    features = select({
-        ":windows": ["windows_export_all_symbols"],
-        "//conditions:default": [],
-    }),
     deps = [
         # cirq cc proto
         "//tensorflow_quantum/core/ops:parse_context",
@@ -74,7 +79,7 @@ tf_kernel_library(
         "//tensorflow_quantum/core/src:util_qsim",
         "@qsim//lib:qsim_cuda_lib",
         "@eigen//:eigen3",
-        "@cuda_headers//:headers",
+        # "@cuda_headers//:headers",
         # tensorflow core framework
         # tensorflow core lib
         # tensorflow core protos
@@ -114,9 +119,11 @@ py_library(
 py_test(
     name = "tfq_simulate_ops_cuda_test",
     srcs = ["tfq_simulate_ops_cuda_test.py"],
+    data = [":_tfq_simulate_ops_cuda.so"],
     python_version = "PY3",
     deps = [
         ":tfq_simulate_ops_cuda_py",
+        ":tfq_simulate_ops_py",
         "//tensorflow_quantum/python:util",
     ],
 )

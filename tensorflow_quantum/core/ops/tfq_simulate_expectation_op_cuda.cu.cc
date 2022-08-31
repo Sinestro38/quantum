@@ -200,7 +200,7 @@ class TfqSimulateExpectationOpGpuCpu : public tensorflow::OpKernel {
     for (const int num : num_qubits) {
       max_num_qubits = std::max(max_num_qubits, num);
     }
-
+    std::cout << "EXECUTING ON THE GPU" << std::endl;
     if (max_num_qubits >= 26 || programs.size() == 1) {
       tensorflow::Tensor d_wf_tensor;
       tensorflow::Tensor d_idx_tensor;
@@ -364,40 +364,5 @@ class TfqSimulateExpectationOpGpuCpu : public tensorflow::OpKernel {
   }
 };
 
-REGISTER_KERNEL_BUILDER(
-    Name("TfqSimulateExpectationGpuCpu").Device(tensorflow::DEVICE_CPU),
-    TfqSimulateExpectationOpGpuCpu);
-
-REGISTER_OP("TfqSimulateExpectationGpuCpu")
-    .Input("programs: string")
-    .Input("symbol_names: string")
-    .Input("symbol_values: float")
-    .Input("pauli_sums: string")
-    .Output("expectations: float")
-    .Attr("num_threads_in_sim: int >= 32 = 32")
-    .Attr("block_count: int >= 2 = 2")
-    .Attr("thread_per_block: int >= 32 = 32")
-    .Attr("cpu_cycle: int >= 1 = 1")
-    .SetShapeFn([](tensorflow::shape_inference::InferenceContext* c) {
-      tensorflow::shape_inference::ShapeHandle programs_shape;
-      TF_RETURN_IF_ERROR(c->WithRank(c->input(0), 1, &programs_shape));
-
-      tensorflow::shape_inference::ShapeHandle symbol_names_shape;
-      TF_RETURN_IF_ERROR(c->WithRank(c->input(1), 1, &symbol_names_shape));
-
-      tensorflow::shape_inference::ShapeHandle symbol_values_shape;
-      TF_RETURN_IF_ERROR(c->WithRank(c->input(2), 2, &symbol_values_shape));
-
-      tensorflow::shape_inference::ShapeHandle pauli_sums_shape;
-      TF_RETURN_IF_ERROR(c->WithRank(c->input(3), 2, &pauli_sums_shape));
-
-      tensorflow::shape_inference::DimensionHandle output_rows =
-          c->Dim(programs_shape, 0);
-      tensorflow::shape_inference::DimensionHandle output_cols =
-          c->Dim(pauli_sums_shape, 1);
-      c->set_output(0, c->Matrix(output_rows, output_cols));
-
-      return tensorflow::Status::OK();
-    });
 
 }  // namespace tfq

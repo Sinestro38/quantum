@@ -17,7 +17,7 @@ import os
 import tensorflow as tf
 from tensorflow_quantum.core.ops.load_module import load_module
 
-SIM_OP_MODULE = load_module(os.path.join("gpu", "_tfq_simulate_ops_cuda.so"))
+SIM_OP_MODULE = load_module("_tfq_simulate_ops_cuda.so")
 
 
 def tfq_simulate_expectation(programs, symbol_names, symbol_values, pauli_sums,

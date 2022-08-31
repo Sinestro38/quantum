@@ -13,6 +13,7 @@
 # limitations under the License.
 # ==============================================================================
 """Tests that specifically target tfq_simulate_ops_cuda."""
+import os
 import time
 import numpy as np
 from absl.testing import parameterized
@@ -22,6 +23,10 @@ import cirq
 from tensorflow_quantum.core.ops import tfq_simulate_ops
 from tensorflow_quantum.python import util
 
+from tensorflow_quantum.core.ops.load_module import load_module
+
+SIM_OP_MODULE = load_module(os.path.join("_tfq_simulate_ops_cuda.so"))
+tfq_simulate_expectation_gpu = SIM_OP_MODULE.tfq_simulate_expectation_gpu_cpu
 
 class SimulateExpectationTest(tf.test.TestCase):
     """Tests tfq_simulate_expectation."""
@@ -67,7 +72,7 @@ class SimulateExpectationTest(tf.test.TestCase):
         for _ in range(10):
             cpu_with_gpu_time = time.time()
             with tf.device("/device:GPU:0"):
-                res_cpu_with_gpu = tfq_simulate_ops.tfq_simulate_expectation(
+                res_cpu_with_gpu = tfq_simulate_expectation_gpu(
                     circuit_batch_tensor,
                     symbol_names, symbol_values_array.astype(np.float64),
                     pauli_sums_tensor)
@@ -83,7 +88,7 @@ class SimulateExpectationTest(tf.test.TestCase):
         @tf.function
         def cpu_with_gpu_fn():
             with tf.device("/device:GPU:0"):
-                return tfq_simulate_ops.tfq_simulate_expectation(
+                return tfq_simulate_expectation_gpu(
                     circuit_batch_tensor,
                     symbol_names, symbol_values_array.astype(np.float64),
                     pauli_sums_tensor)
