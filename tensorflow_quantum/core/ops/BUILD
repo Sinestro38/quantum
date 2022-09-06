@@ -18,19 +18,19 @@ config_setting(
     constraint_values = ["@bazel_tools//platforms:windows"],
 )
 
-tf_kernel_library(
+tf_gpu_kernel_library(
     name = "_tfq_simulate_ops_cuda.so",
+    # srcs = [
+    #     "tfq_simulate_expectation_op_cuda.cc"
+    # ],
     srcs = [
-        "tfq_simulate_expectation_op_cuda.cc"
-    ],
-    gpu_srcs = [
         "tfq_simulate_expectation_op_cuda.cu.cc",
     ],
     features = select({
         ":windows": ["windows_export_all_symbols"],
         "//conditions:default": [],
     }),
-    gpu_copts = select({
+    copts = select({
         ":windows": [
             "/D__CLANG_SUPPORT_DYN_ANNOTATION__",
             "/D_USE_MATH_DEFINES",
@@ -60,6 +60,12 @@ tf_kernel_library(
             "/UTF_COMPILE_LIBRARY",
         ],
         "//conditions:default": [
+            "-Iexternal/local_cuda/cuda/include",
+            "--cuda-gpu-arch=sm_86",
+            "-L/usr/local/cuda/lib64",
+            "-lcudart_static",
+            "-ldl",
+            "-lrt",
             "-pthread",
             "-std=c++14",
             "-D_GLIBCXX_USE_CXX11_ABI=0",
@@ -79,12 +85,12 @@ tf_kernel_library(
         "//tensorflow_quantum/core/src:util_qsim",
         "@qsim//lib:qsim_cuda_lib",
         "@eigen//:eigen3",
-        # "@cuda_headers//:headers",
+        # "@local_cuda//:cuda_headers"
         # tensorflow core framework
         # tensorflow core lib
         # tensorflow core protos
     ],
-    # alwayslink = 1,
+    # alwayslink=1,
 )
 
 tf_gen_op_wrapper_py(

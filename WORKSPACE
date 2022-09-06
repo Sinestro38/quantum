@@ -2,6 +2,15 @@
 # TensorFlow op.
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+# http_archive(
+#     name = "rules_cuda",
+#     sha256 = "dadc67b79ac66974578f322a698f5fe8b1783df758034578999745eeeecc38a7",
+#     strip_prefix = "rules_cuda-d95437f963d501aec284e9daf22c36ad4e4651fd",
+#     urls = ["https://github.com/cloudhan/rules_cuda/archive/d95437f963d501aec284e9daf22c36ad4e4651fd.tar.gz"],
+# )
+# load("@rules_cuda//cuda:deps.bzl", "register_detected_cuda_toolchains", "rules_cuda_deps")
+# rules_cuda_deps()
+# register_detected_cuda_toolchains()
 
 EIGEN_COMMIT = "12e8d57108c50d8a63605c6eb0144c838c128337"
 EIGEN_SHA256 = "f689246e342c3955af48d26ce74ac34d21b579a00675c341721a735937919b02"
@@ -30,6 +39,7 @@ http_archive(
     strip_prefix = "qsim-0.14.0",
     urls = ["https://github.com/quantumlib/qsim/archive/refs/tags/v0.14.0.zip"],
 )
+
 
 # new_local_repository(
 #     name = "qsim",
