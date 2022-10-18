@@ -3,6 +3,7 @@ load("@org_tensorflow//tensorflow:tensorflow.bzl", "tf_gen_op_wrapper_py")
 load("@org_tensorflow//tensorflow:tensorflow.bzl", "tf_kernel_library")
 # load("@org_tensorflow//tensorflow:tensorflow.bzl", "tf_gpu_library")
 load("@org_tensorflow//tensorflow:tensorflow.bzl", "tf_gpu_kernel_library")
+load("@local_config_cuda//cuda:build_defs.bzl", "if_cuda_is_configured", "if_cuda")
 
 # load op_wrapper
 
@@ -18,86 +19,178 @@ config_setting(
     constraint_values = ["@bazel_tools//platforms:windows"],
 )
 
-tf_gpu_kernel_library(
-    name = "_tfq_simulate_ops_cuda.so",
-    # srcs = [
-    #     "tfq_simulate_expectation_op_cuda.cc"
-    # ],
-    srcs = [
-        "tfq_simulate_expectation_op_cuda.cu.cc",
+cc_library(
+    name = "cuda",
+    data = [
+        "@local_config_cuda//cuda:cudart",
     ],
-    features = select({
-        ":windows": ["windows_export_all_symbols"],
-        "//conditions:default": [],
-    }),
-    copts = select({
-        ":windows": [
-            "/D__CLANG_SUPPORT_DYN_ANNOTATION__",
-            "/D_USE_MATH_DEFINES",
-            "/DEIGEN_MPL2_ONLY",
-            "/DEIGEN_MAX_ALIGN_BYTES=64",
-            "/DEIGEN_HAS_TYPE_TRAITS=0",
-            "/DTF_USE_SNAPPY",
-            "/showIncludes",
-            "/MD",
-            "/O2",
-            "/DNDEBUG",
-            "/w",
-            "-DWIN32_LEAN_AND_MEAN",
-            "-DNOGDI",
-            "/d2ReducedOptimizeHugeFunctions",
-            "/arch:AVX",
-            "/std:c++14",
-            "-DTENSORFLOW_MONOLITHIC_BUILD",
-            "/DPLATFORM_WINDOWS",
-            "/DEIGEN_HAS_C99_MATH",
-            "/DTENSORFLOW_USE_EIGEN_THREADPOOL",
-            "/DEIGEN_AVOID_STL_ARRAY",
-            "/Iexternal/gemmlowp",
-            "/wd4018",
-            "/wd4577",
-            "/DNOGDI",
-            "/UTF_COMPILE_LIBRARY",
+    linkopts = select({
+        "@local_config_cuda//cuda:darwin": [
+            "-Wl,-rpath,../local_config_cuda/cuda/lib",
+            "-Wl,-rpath,../local_config_cuda/cuda/extras/CUPTI/lib",
         ],
+        ":windows": [],
         "//conditions:default": [
-            "-Iexternal/local_cuda/cuda/include",
-            "--cuda-gpu-arch=sm_86",
-            "-L/usr/local/cuda/lib64",
-            "-lcudart_static",
-            "-ldl",
-            "-lrt",
-            "-pthread",
-            "-std=c++14",
-            "-D_GLIBCXX_USE_CXX11_ABI=0",
-            "-O3",
-            "-Iexternal/cuda_headers",
-            "-DNV_CUDNN_DISABLE_EXCEPTION",
-            # "-fpermissive",
+            "-Wl,-rpath,../local_config_cuda/cuda/lib64",
+            "-Wl,-rpath,../local_config_cuda/cuda/extras/CUPTI/lib64",
         ],
     }),
     deps = [
-        # cirq cc proto
-        "//tensorflow_quantum/core/ops:parse_context",
-        "//tensorflow_quantum/core/ops:tfq_simulate_utils",
-        "//tensorflow_quantum/core/proto:pauli_sum_cc_proto",
-        "//tensorflow_quantum/core/proto:program_cc_proto",
-        "//tensorflow_quantum/core/src:circuit_parser_qsim",
-        "//tensorflow_quantum/core/src:util_qsim",
-        "@qsim//lib:qsim_cuda_lib",
-        "@eigen//:eigen3",
-        # "@local_cuda//:cuda_headers"
-        # tensorflow core framework
-        # tensorflow core lib
-        # tensorflow core protos
+        "@local_config_cuda//cuda:cudart",
     ],
-    # alwayslink=1,
 )
 
-tf_gen_op_wrapper_py(
-    name = "gen_tfq_simulate_ops_cuda_py",
-    out = "gen_tfq_simulate_ops_cuda.py",
-    deps = [":_tfq_simulate_ops_cuda.so"],
+# cc_library(
+#     name = "tfq_simulate_ops_cuda_kernel",
+#     srcs = ["tfq_simulate_expectation_op_cuda.cu.cc"],
+#     deps = [
+#         "@local_config_tf//:libtensorflow_framework",
+#         "@local_config_tf//:tf_header_lib",
+#     ] + if_cuda_is_configured([":cuda",  "@local_config_cuda//cuda:cuda_headers"]),
+#     alwayslink = 1,
+#     linkopts = [],
+#     copts = select({
+#         ":windows": ["/D__CLANG_SUPPORT_DYN_ANNOTATION__", "/DEIGEN_MPL2_ONLY", "/DEIGEN_MAX_ALIGN_BYTES=64", "/DEIGEN_HAS_TYPE_TRAITS=0", "/DTF_USE_SNAPPY", "/showIncludes", "/MD", "/O2", "/DNDEBUG", "/w", "-DWIN32_LEAN_AND_MEAN", "-DNOGDI", "/d2ReducedOptimizeHugeFunctions", "/arch:AVX", "/std:c++14", "-DTENSORFLOW_MONOLITHIC_BUILD", "/DPLATFORM_WINDOWS", "/DEIGEN_HAS_C99_MATH", "/DTENSORFLOW_USE_EIGEN_THREADPOOL", "/DEIGEN_AVOID_STL_ARRAY", "/Iexternal/gemmlowp", "/wd4018", "/wd4577", "/DNOGDI", "/UTF_COMPILE_LIBRARY"],
+#         "//conditions:default": ["-pthread", "-std=c++11", "-D_GLIBCXX_USE_CXX11_ABI=0"],
+#     }) + if_cuda_is_configured(["-DTENSORFLOW_USE_NVCC=1", "-DGOOGLE_CUDA=1", "-x cuda", "-nvcc_options=relaxed-constexpr", "-nvcc_options=ftz=true"]),
+# )
+
+cc_binary(
+    name = '_tfq_simulate_ops_cuda.so',
+    srcs = ["tfq_simulate_expectation_op_cuda.cu.cc"],
+    linkshared = 1,
+    linkopts = [],
+    features = select({
+        ":windows": ["windows_export_all_symbols"],
+        "//conditions:default": [],
+    }),    
+    deps = [
+        "@local_config_tf//:libtensorflow_framework",
+        "@local_config_tf//:tf_header_lib",
+    ] + if_cuda_is_configured([":cuda",  "@local_config_cuda//cuda:cuda_headers"]),
+    # ] + if_cuda_is_configured([":tfq_simulate_ops_cuda_kernel"]),
+    copts = select({
+        ":windows": ["/D__CLANG_SUPPORT_DYN_ANNOTATION__", "/DEIGEN_MPL2_ONLY", "/DEIGEN_MAX_ALIGN_BYTES=64", "/DEIGEN_HAS_TYPE_TRAITS=0", "/DTF_USE_SNAPPY", "/showIncludes", "/MD", "/O2", "/DNDEBUG", "/w", "-DWIN32_LEAN_AND_MEAN", "-DNOGDI", "/d2ReducedOptimizeHugeFunctions", "/arch:AVX", "/std:c++14", "-DTENSORFLOW_MONOLITHIC_BUILD", "/DPLATFORM_WINDOWS", "/DEIGEN_HAS_C99_MATH", "/DTENSORFLOW_USE_EIGEN_THREADPOOL", "/DEIGEN_AVOID_STL_ARRAY", "/Iexternal/gemmlowp", "/wd4018", "/wd4577", "/DNOGDI", "/UTF_COMPILE_LIBRARY"],
+        "//conditions:default": ["-pthread", "-std=c++11", "-D_GLIBCXX_USE_CXX11_ABI=0"],
+    }) + if_cuda_is_configured(["-DTENSORFLOW_USE_NVCC=1", "-DGOOGLE_CUDA=1", "-x cuda", "-nvcc_options=relaxed-constexpr", "-nvcc_options=ftz=true"]),
 )
+
+py_library(
+    name = "tfq_simulate_ops_cuda_py",
+    srcs = ([
+        "tfq_simulate_ops_cuda.py",
+    ]),
+    data = [
+        ":_tfq_simulate_ops_cuda.so"
+    ],
+    srcs_version = "PY2AND3",
+)
+
+py_test(
+    name = "tfq_simulate_ops_cuda_test",
+    srcs = [
+        "tfq_simulate_ops_cuda_test.py"
+    ],
+    main = "tfq_simulate_ops_cuda_test.py",
+    deps = [
+        ":tfq_simulate_ops_cuda_py",
+    ],
+    srcs_version = "PY2AND3",
+)
+
+# py_library(
+#     name = "time_two_py",
+#     srcs = ([
+#         "__init__.py",
+#         "python/__init__.py",
+#         "python/ops/__init__.py",
+#     ]),
+#     deps = [
+#         ":time_two_ops_py"
+#     ],
+#     srcs_version = "PY2AND3",
+# )
+
+# tf_gpu_kernel_library(
+#     name = "_tfq_simulate_ops_cuda.so",
+#     # srcs = [
+#     #     "tfq_simulate_expectation_op_cuda.cc"
+#     # ],
+#     srcs = [
+#         "tfq_simulate_expectation_op_cuda.cu.cc",
+#     ],
+#     features = select({
+#         ":windows": ["windows_export_all_symbols"],
+#         "//conditions:default": [],
+#     }),
+#     copts = select({
+#         ":windows": [
+#             "/D__CLANG_SUPPORT_DYN_ANNOTATION__",
+#             "/D_USE_MATH_DEFINES",
+#             "/DEIGEN_MPL2_ONLY",
+#             "/DEIGEN_MAX_ALIGN_BYTES=64",
+#             "/DEIGEN_HAS_TYPE_TRAITS=0",
+#             "/DTF_USE_SNAPPY",
+#             "/showIncludes",
+#             "/MD",
+#             "/O2",
+#             "/DNDEBUG",
+#             "/w",
+#             "-DWIN32_LEAN_AND_MEAN",
+#             "-DNOGDI",
+#             "/d2ReducedOptimizeHugeFunctions",
+#             "/arch:AVX",
+#             "/std:c++14",
+#             "-DTENSORFLOW_MONOLITHIC_BUILD",
+#             "/DPLATFORM_WINDOWS",
+#             "/DEIGEN_HAS_C99_MATH",
+#             "/DTENSORFLOW_USE_EIGEN_THREADPOOL",
+#             "/DEIGEN_AVOID_STL_ARRAY",
+#             "/Iexternal/gemmlowp",
+#             "/wd4018",
+#             "/wd4577",
+#             "/DNOGDI",
+#             "/UTF_COMPILE_LIBRARY",
+#         ],
+#         "//conditions:default": [
+#             # "-Iexternal/local_cuda/cuda/include",
+#             # "--cuda-gpu-arch=sm_86",
+#             # "-L/usr/local/cuda/lib64",
+#             # "-lcudart_static",
+#             # "-ldl",
+#             # "-lrt",
+#             "-pthread",
+#             "-std=c++14",
+#             "-D_GLIBCXX_USE_CXX11_ABI=0",
+#             "-O3",
+#             "-Iexternal/cuda_headers",
+#             "-DNV_CUDNN_DISABLE_EXCEPTION",
+#             # "-fpermissive",
+#         ],
+#     }),
+#     deps = [
+#         # cirq cc proto
+#         "//tensorflow_quantum/core/ops:parse_context",
+#         "//tensorflow_quantum/core/ops:tfq_simulate_utils",
+#         "//tensorflow_quantum/core/proto:pauli_sum_cc_proto",
+#         "//tensorflow_quantum/core/proto:program_cc_proto",
+#         "//tensorflow_quantum/core/src:circuit_parser_qsim",
+#         "//tensorflow_quantum/core/src:util_qsim",
+#         "@qsim//lib:qsim_cuda_lib",
+#         "@eigen//:eigen3",
+#         # "@local_cuda//:cuda_headers"
+#         # tensorflow core framework
+#         # tensorflow core lib
+#         # tensorflow core protos
+#     ],
+#     # alwayslink=1,
+# )
+
+# tf_gen_op_wrapper_py(
+#     name = "gen_tfq_simulate_ops_cuda_py",
+#     out = "gen_tfq_simulate_ops_cuda.py",
+#     deps = [":_tfq_simulate_ops_cuda.so"],
+# )
 
 py_binary(
     name = "gpu_benchmark",
@@ -111,28 +204,28 @@ py_binary(
     ],
 )
 
-py_library(
-    name = "tfq_simulate_ops_cuda_py",
-    srcs = ["tfq_simulate_ops_cuda.py"],
-    data = [":_tfq_simulate_ops_cuda.so"],
-    srcs_version = "PY3",
-    deps = [
-        # tensorflow framework for wrappers
-        "//tensorflow_quantum/core/ops:load_module",
-    ],
-)
+# py_library(
+#     name = "tfq_simulate_ops_cuda_py",
+#     srcs = ["tfq_simulate_ops_cuda.py"],
+#     data = [":_tfq_simulate_ops_cuda.so"],
+#     srcs_version = "PY3",
+#     deps = [
+#         # tensorflow framework for wrappers
+#         "//tensorflow_quantum/core/ops:load_module",
+#     ],
+# )
 
-py_test(
-    name = "tfq_simulate_ops_cuda_test",
-    srcs = ["tfq_simulate_ops_cuda_test.py"],
-    data = [":_tfq_simulate_ops_cuda.so"],
-    python_version = "PY3",
-    deps = [
-        ":tfq_simulate_ops_cuda_py",
-        ":tfq_simulate_ops_py",
-        "//tensorflow_quantum/python:util",
-    ],
-)
+# py_test(
+#     name = "tfq_simulate_ops_cuda_test",
+#     srcs = ["tfq_simulate_ops_cuda_test.py"],
+#     data = [":_tfq_simulate_ops_cuda.so"],
+#     python_version = "PY3",
+#     deps = [
+#         ":tfq_simulate_ops_cuda_py",
+#         ":tfq_simulate_ops_py",
+#         "//tensorflow_quantum/python:util",
+#     ],
+# )
 
 
 ### CUQUANTUM TARGETS 

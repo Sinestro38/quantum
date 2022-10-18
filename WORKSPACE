@@ -91,8 +91,11 @@ load("@org_tensorflow//tensorflow:workspace0.bzl", "workspace")
 workspace()
 
 load("//third_party/tf:tf_configure.bzl", "tf_configure")
+load("//gpu:cuda_configure.bzl", "cuda_configure")
 
 tf_configure(name = "local_config_tf")
+
+cuda_configure(name = "local_config_cuda")
 
 http_archive(
     name = "six_archive",
