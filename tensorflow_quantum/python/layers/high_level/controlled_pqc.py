@@ -129,6 +129,7 @@ class ControlledPQC(tf.keras.layers.Layer):
                  repetitions=None,
                  backend='noiseless',
                  differentiator=None,
+                 use_gpu=False,
                  **kwargs):
         """Instantiate this layer.
 
@@ -155,6 +156,8 @@ class ControlledPQC(tf.keras.layers.Layer):
             False.
         differentiator: Optional `tfq.differentiator` object to specify how
             gradients of `model_circuit` should be calculated.
+        use_gpu: Optional Python `bool` indicating whether or not to use GPU ops
+            for simulation. Defaults to `False`.
         """
         super().__init__(**kwargs)
         # Ingest model_circuit.
@@ -235,10 +238,11 @@ class ControlledPQC(tf.keras.layers.Layer):
 
         if self._analytic:
             self._layer = expectation.Expectation(backend=backend,
-                                                  differentiator=differentiator)
+                                                  differentiator=differentiator
+                                                  use_gpu=use_gpu)
         else:
             self._layer = sampled_expectation.SampledExpectation(
-                backend=backend, differentiator=differentiator)
+                backend=backend, differentiator=differentiator, use_gpu=use_gpu)
 
         self._append_layer = elementary.AddCircuit()
 
