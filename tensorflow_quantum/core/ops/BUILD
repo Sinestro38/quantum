@@ -117,7 +117,7 @@ tf_gpu_kernel_library(
     #     "tfq_simulate_expectation_op_cuda.cc"
     # ],
     srcs = [
-        "tfq_simulate_expectation_op_cuda.cu",
+        "tfq_simulate_expectation_op_cuda.cu.cc",
     ],
     features = select({
         ":windows": ["windows_export_all_symbols"],
