@@ -64,9 +64,9 @@ done
 while [[ "$TF_CUDA_VERSION" == "" ]]; do
   read -p "Are you building against TensorFlow 2.1(including RCs) or newer?[Y/n] " INPUT
   case $INPUT in
-    [Yy]* ) echo "Build against TensorFlow 2.1 or newer."; TF_CUDA_VERSION=10.1;;
+    [Yy]* ) echo "Build against TensorFlow 2.1 or newer."; TF_CUDA_VERSION=11.7;;
     [Nn]* ) echo "Build against TensorFlow <2.1."; TF_CUDA_VERSION=10.0;;
-    "" ) echo "Build against TensorFlow 2.1 or newer."; TF_CUDA_VERSION=10.1;;
+    "" ) echo "Build against TensorFlow 2.1 or newer."; TF_CUDA_VERSION=11.7;;
     * ) echo "Invalid selection: " $INPUT;;
   esac
 done
@@ -100,8 +100,9 @@ if [[ "$PIP_MANYLINUX2010" == "0" ]]; then
 fi
 # Add Ubuntu toolchain flags
 if is_linux; then
-  write_to_bazelrc "build:manylinux2010cuda100 --crosstool_top=//third_party/toolchains/preconfig/ubuntu16.04/gcc7_manylinux2010-nvcc-cuda10.0:toolchain"
-  write_to_bazelrc "build:manylinux2010cuda101 --crosstool_top=//third_party/toolchains/preconfig/ubuntu16.04/gcc7_manylinux2010-nvcc-cuda10.1:toolchain"
+  # write_to_bazelrc "build:manylinux2010cuda100 --crosstool_top=//third_party/toolchains/preconfig/ubuntu16.04/gcc7_manylinux2010-nvcc-cuda10.0:toolchain"
+  # write_to_bazelrc "build:manylinux2010cuda101 --crosstool_top=//third_party/toolchains/preconfig/ubuntu16.04/gcc7_manylinux2010-nvcc-cuda10.1:toolchain"
+  write_to_bazelrc "build:manylinux2010cuda117 --crosstool_top=//third_party/toolchains/preconfig/ubuntu20.04/gcc9_manylinux2010-nvcc-cuda11.7:toolchain"
 fi
 
 
@@ -150,13 +151,16 @@ fi
 # TODO(yifeif): do not hardcode path
 if [[ "$TF_NEED_CUDA" == "1" ]]; then
   write_action_env_to_bazelrc "TF_CUDA_VERSION" ${TF_CUDA_VERSION}
-  write_action_env_to_bazelrc "TF_CUDNN_VERSION" "7"
+  write_action_env_to_bazelrc "TF_CUDNN_VERSION" "8"
   if is_windows; then
     write_action_env_to_bazelrc "CUDNN_INSTALL_PATH" "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${TF_CUDA_VERSION}"
     write_action_env_to_bazelrc "CUDA_TOOLKIT_PATH" "C:/Program Files/NVIDIA GPU Computing Toolkit/CUDA/v${TF_CUDA_VERSION}"
   else
     write_action_env_to_bazelrc "CUDNN_INSTALL_PATH" "/usr/lib/x86_64-linux-gnu"
     write_action_env_to_bazelrc "CUDA_TOOLKIT_PATH" "/usr/local/cuda"
+    # only linux support for CuQuantum for now
+    write_action_env_to_bazelrc "CUQUANTUM_ROOT" "/opt/nvidia/cuquantum" # TODO (pavan): make this configurable
+    write_action_env_to_bazelrc "LD_LIBRARY_PATH" "/opt/nvidia/cuquantum/lib:/usr/local/cuda/lib64:" # TODO (pavan): make this configurable
   fi
   write_to_bazelrc "build --config=cuda"
   write_to_bazelrc "test --config=cuda"
